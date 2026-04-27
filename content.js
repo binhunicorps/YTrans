@@ -191,11 +191,7 @@
   // ── Voice (Text-to-Speech) ──────────────────────────────────────────────────────
   const synth = window.speechSynthesis;
   let savedVideoMuted = null;
-
-  // Cache voices – browsers fire voiceschanged asynchronously on first load
-  let cachedVoices = [];
-  function loadVoiceCache() { cachedVoices = synth ? synth.getVoices() : []; }
-  if (synth) { loadVoiceCache(); synth.addEventListener('voiceschanged', loadVoiceCache); }
+  let speakSeq = 0;   // incremented each call; used to drop stale utterances
 
   const LANG_BCP47 = {
     vi: 'vi-VN', en: 'en-US', ja: 'ja-JP', ko: 'ko-KR',
@@ -203,12 +199,21 @@
     es: 'es-ES', pt: 'pt-BR', ru: 'ru-RU', ar: 'ar-SA', th: 'th-TH', id: 'id-ID',
   };
 
-  function pickVoice(bcp47) {
-    if (!cachedVoices.length) loadVoiceCache();
-    const exact = cachedVoices.find((v) => v.lang === bcp47);
-    if (exact) return exact;
-    const primary = bcp47.split('-')[0];
-    return cachedVoices.find((v) => v.lang.startsWith(primary)) || null;
+  // Returns voices[], waiting for voiceschanged if not yet populated (max 2 s)
+  function getVoicesAsync() {
+    return new Promise((resolve) => {
+      const v = synth ? synth.getVoices() : [];
+      if (v.length) return resolve(v);
+      const timer = setTimeout(() => {
+        synth.removeEventListener('voiceschanged', onReady);
+        resolve(synth.getVoices());
+      }, 2000);
+      function onReady() {
+        clearTimeout(timer);
+        resolve(synth.getVoices());
+      }
+      synth.addEventListener('voiceschanged', onReady, { once: true });
+    });
   }
 
   // Mute video for the entire duration voice mode is active
@@ -228,28 +233,39 @@
     }
   }
 
-  function speakTranslation(text) {
+  async function speakTranslation(text) {
     if (!synth || !settings.voiceEnabled || !text) return;
 
     synth.cancel();
+    const mySeq = ++speakSeq;
 
+    // Wait until the browser has finished loading its voice list
+    const voices = await getVoicesAsync();
+    if (mySeq !== speakSeq) return;   // newer subtitle arrived while we waited
+
+    const bcp47 = LANG_BCP47[settings.targetLang] || settings.targetLang || 'en-US';
     const u = new SpeechSynthesisUtterance(text);
-    u.lang = LANG_BCP47[settings.targetLang] || settings.targetLang || 'en-US';
+    u.lang = bcp47;
 
-    // Match voice speed to current video playback rate so they stay in sync
+    // Pick best matching voice for the target language
+    const exact   = voices.find((v) => v.lang === bcp47);
+    const primary = bcp47.split('-')[0];
+    const matched = exact || voices.find((v) => v.lang.startsWith(primary)) || null;
+    if (matched) u.voice = matched;
+
+    // Match voice speed to current video playback rate
     const video = document.querySelector('video');
     const videoRate = video ? (video.playbackRate || 1.0) : 1.0;
     u.rate   = Math.max(0.5, Math.min(4, Number(settings.voiceRate || 1.0) * videoRate));
     u.volume = 1.0;
 
-    const v = pickVoice(u.lang);
-    if (v) u.voice = v;
-
+    console.log(`[YTrans Voice] lang=${bcp47} voice="${matched?.name || '(default)'}" rate=${u.rate.toFixed(2)}`);
     synth.speak(u);
   }
 
   function cancelSpeech() {
     if (synth) synth.cancel();
+    speakSeq++;   // invalidate any pending async speak
     unmuteVideoForVoice();
   }
 
