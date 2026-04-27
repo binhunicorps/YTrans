@@ -31,6 +31,7 @@
     chrome.storage.onChanged.addListener((changes) => {
       if (!changes.ytransSettings) return;
       const wasEnabled = settings.enabled;
+      const wasVoice   = settings.voiceEnabled;
       const oldLang    = settings.targetLang;
       settings = changes.ytransSettings.newValue;
       applyStyle();
@@ -46,6 +47,12 @@
         // Language changed mid-translation → restart with new language
         stopTranslation();
         startTranslation();
+      }
+
+      // React to voice toggle changes while translation is running
+      if (isTranslating) {
+        if (!wasVoice && settings.voiceEnabled) muteVideoForVoice();
+        else if (wasVoice && !settings.voiceEnabled) cancelSpeech();
       }
     });
 
@@ -113,6 +120,7 @@
     // YouTube blocks direct /api/timedtext fetches without PoToken,
     // so we always force-enable native CC and read it via MutationObserver.
     forceEnableCC();
+    muteVideoForVoice();
     startCCMode();
 
     updateButton(false);
@@ -182,7 +190,12 @@
 
   // ── Voice (Text-to-Speech) ──────────────────────────────────────────────────────
   const synth = window.speechSynthesis;
-  let savedVideoVolume = null;   // for audio-ducking restore
+  let savedVideoMuted = null;
+
+  // Cache voices – browsers fire voiceschanged asynchronously on first load
+  let cachedVoices = [];
+  function loadVoiceCache() { cachedVoices = synth ? synth.getVoices() : []; }
+  if (synth) { loadVoiceCache(); synth.addEventListener('voiceschanged', loadVoiceCache); }
 
   const LANG_BCP47 = {
     vi: 'vi-VN', en: 'en-US', ja: 'ja-JP', ko: 'ko-KR',
@@ -191,55 +204,53 @@
   };
 
   function pickVoice(bcp47) {
-    if (!synth) return null;
-    const voices = synth.getVoices();
-    if (!voices.length) return null;
-    const exact = voices.find((v) => v.lang === bcp47);
+    if (!cachedVoices.length) loadVoiceCache();
+    const exact = cachedVoices.find((v) => v.lang === bcp47);
     if (exact) return exact;
     const primary = bcp47.split('-')[0];
-    return voices.find((v) => v.lang.startsWith(primary)) || null;
+    return cachedVoices.find((v) => v.lang.startsWith(primary)) || null;
+  }
+
+  // Mute video for the entire duration voice mode is active
+  function muteVideoForVoice() {
+    if (!settings.voiceEnabled || !settings.duckAudio) return;
+    const video = document.querySelector('video');
+    if (!video || savedVideoMuted !== null) return;
+    savedVideoMuted = video.muted;
+    video.muted = true;
+  }
+
+  function unmuteVideoForVoice() {
+    const video = document.querySelector('video');
+    if (video && savedVideoMuted !== null) {
+      video.muted = savedVideoMuted;
+      savedVideoMuted = null;
+    }
   }
 
   function speakTranslation(text) {
     if (!synth || !settings.voiceEnabled || !text) return;
 
-    synth.cancel();   // hard-stop any in-progress utterance so we stay in sync
+    synth.cancel();
 
     const u = new SpeechSynthesisUtterance(text);
-    u.lang   = LANG_BCP47[settings.targetLang] || settings.targetLang || 'en-US';
-    u.rate   = Math.max(0.5, Math.min(2, Number(settings.voiceRate) || 1.0));
+    u.lang = LANG_BCP47[settings.targetLang] || settings.targetLang || 'en-US';
+
+    // Match voice speed to current video playback rate so they stay in sync
+    const video = document.querySelector('video');
+    const videoRate = video ? (video.playbackRate || 1.0) : 1.0;
+    u.rate   = Math.max(0.5, Math.min(4, Number(settings.voiceRate || 1.0) * videoRate));
     u.volume = 1.0;
+
     const v = pickVoice(u.lang);
     if (v) u.voice = v;
-
-    if (settings.duckAudio) {
-      const video = document.querySelector('video');
-      if (video) {
-        u.onstart = () => {
-          if (savedVideoVolume === null) savedVideoVolume = video.volume;
-          video.volume = Math.max(0.05, savedVideoVolume * 0.2);
-        };
-        const restore = () => {
-          if (savedVideoVolume !== null) {
-            video.volume = savedVideoVolume;
-            savedVideoVolume = null;
-          }
-        };
-        u.onend = restore;
-        u.onerror = restore;
-      }
-    }
 
     synth.speak(u);
   }
 
   function cancelSpeech() {
     if (synth) synth.cancel();
-    const video = document.querySelector('video');
-    if (video && savedVideoVolume !== null) {
-      video.volume = savedVideoVolume;
-      savedVideoVolume = null;
-    }
+    unmuteVideoForVoice();
   }
 
   // ── Overlay ───────────────────────────────────────────────────────────────
