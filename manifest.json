@@ -1,13 +1,15 @@
 {
   "manifest_version": 3,
   "name": "YTrans – YouTube Subtitle Translator",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Dịch phụ đề YouTube theo thời gian thực bằng Google Translate",
-  "permissions": ["storage", "alarms"],
+  "permissions": ["storage", "alarms", "notifications", "downloads"],
   "host_permissions": [
     "https://www.youtube.com/*",
     "https://translate.googleapis.com/*",
-    "https://api.github.com/*"
+    "https://api.github.com/*",
+    "https://github.com/*",
+    "https://objects.githubusercontent.com/*"
   ],
   "action": {
     "default_popup": "popup.html",

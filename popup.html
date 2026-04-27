@@ -31,13 +31,14 @@
     </header>
 
     <!-- Update banner (hidden by default) -->
-    <a id="updateBanner" class="update-banner hidden" href="#" target="_blank" rel="noopener">
+    <div id="updateBanner" class="update-banner hidden">
       <span class="update-icon">🎉</span>
-      <span class="update-text">
-        Có bản mới: <b id="updateVersion">v?</b>
-        <span class="update-hint">Click để cập nhật ↗</span>
-      </span>
-    </a>
+      <span class="update-text">Có bản mới: <b id="updateVersion">v?</b></span>
+      <div class="update-actions">
+        <button id="updateDownloadBtn" class="update-btn primary">⬇ Tải về &amp; Cập nhật</button>
+        <a id="updateDetailsLink" class="update-btn secondary" href="#" target="_blank" rel="noopener">Chi tiết ↗</a>
+      </div>
+    </div>
 
     <!-- Status bar -->
     <div class="status-bar" id="statusBar">

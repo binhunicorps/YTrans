@@ -1,28 +1,49 @@
 /* ── Update banner ─────────────────────────────────────────────────────────── */
 .update-banner {
-  display:         flex;
-  align-items:     center;
-  gap:             10px;
-  padding:         10px 14px;
-  background:      linear-gradient(90deg, #1f6feb 0%, #2ea043 100%);
-  color:           #ffffff;
-  text-decoration: none;
-  font-size:       12px;
-  border-bottom:   1px solid #2a2a2a;
-  transition:      filter 0.2s ease;
+  display:       flex;
+  flex-direction: column;
+  gap:           6px;
+  padding:       10px 14px;
+  background:    linear-gradient(135deg, #1a3a5c 0%, #1a4a2a 100%);
+  color:         #ffffff;
+  font-size:     12px;
+  border-bottom: 1px solid #2a2a2a;
 }
-.update-banner:hover { filter: brightness(1.1); }
 .update-banner.hidden { display: none; }
 
-.update-banner .update-icon { font-size: 18px; line-height: 1; }
-.update-banner .update-text { flex: 1; line-height: 1.4; }
-.update-banner b { font-weight: 700; }
-.update-banner .update-hint {
-  display: block;
-  font-size: 11px;
-  opacity: 0.85;
-  margin-top: 1px;
+.update-banner .update-icon { font-size: 16px; line-height: 1; }
+.update-banner .update-text { line-height: 1.4; }
+.update-banner b { font-weight: 700; color: #7dd3a8; }
+
+.update-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 2px;
 }
+
+.update-btn {
+  flex: 1;
+  padding:       5px 8px;
+  border:        none;
+  border-radius: 5px;
+  font-size:     11px;
+  font-weight:   600;
+  cursor:        pointer;
+  text-align:    center;
+  text-decoration: none;
+  transition:    background 0.2s;
+}
+.update-btn.primary {
+  background: #2ea043;
+  color: #fff;
+}
+.update-btn.primary:hover:not(:disabled) { background: #3fb951; }
+.update-btn.primary:disabled { opacity: 0.6; cursor: default; }
+.update-btn.secondary {
+  background: #1f6feb;
+  color: #fff;
+}
+.update-btn.secondary:hover { background: #388bfd; }
 
 .version-tag {
   font-size:    10px;

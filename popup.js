@@ -75,29 +75,44 @@ function updateStatus(enabled) {
 
 // ── Version + update banner ───────────────────────────────────────────────────
 (function initVersionAndUpdate() {
-  const manifest = chrome.runtime.getManifest();
-  const verEl    = document.getElementById('currentVersion');
+  const manifest     = chrome.runtime.getManifest();
+  const verEl        = document.getElementById('currentVersion');
   if (verEl) verEl.textContent = manifest.version;
 
-  const banner   = document.getElementById('updateBanner');
-  const verBadge = document.getElementById('updateVersion');
+  const banner       = document.getElementById('updateBanner');
+  const verBadge     = document.getElementById('updateVersion');
+  const dlBtn        = document.getElementById('updateDownloadBtn');
+  const detailsLink  = document.getElementById('updateDetailsLink');
 
-  chrome.storage.local.get('updateAvailable', ({ updateAvailable }) => {
+  function applyUpdate(updateAvailable) {
     if (!updateAvailable || !banner) return;
     banner.classList.remove('hidden');
-    banner.href = updateAvailable.url;
     if (verBadge) verBadge.textContent = `v${updateAvailable.version}`;
+    if (detailsLink) detailsLink.href = updateAvailable.url || '#';
+  }
+
+  chrome.storage.local.get('updateAvailable', ({ updateAvailable }) => applyUpdate(updateAvailable));
+
+  // Re-check on popup open
+  chrome.runtime.sendMessage({ type: 'YTRANS_CHECK_UPDATE' }, () => {
+    chrome.storage.local.get('updateAvailable', ({ updateAvailable }) => applyUpdate(updateAvailable));
   });
 
-  // Re-check on popup open (lightweight – fires alarm-like check)
-  chrome.runtime.sendMessage({ type: 'YTRANS_CHECK_UPDATE' }, () => {
-    chrome.storage.local.get('updateAvailable', ({ updateAvailable }) => {
-      if (!updateAvailable || !banner) return;
-      banner.classList.remove('hidden');
-      banner.href = updateAvailable.url;
-      if (verBadge) verBadge.textContent = `v${updateAvailable.version}`;
+  // "Tải về & Cập nhật" → ask background to download zip + open extensions page
+  if (dlBtn) {
+    dlBtn.addEventListener('click', () => {
+      dlBtn.textContent = '⏳ Đang tải…';
+      dlBtn.disabled = true;
+      chrome.runtime.sendMessage({ type: 'YTRANS_DO_UPDATE' }, (res) => {
+        if (res?.ok) {
+          dlBtn.textContent = '✓ Đã tải — reload extension';
+        } else {
+          dlBtn.textContent = '⬇ Tải về & Cập nhật';
+          dlBtn.disabled = false;
+        }
+      });
     });
-  });
+  }
 })();
 
 // ── Event Listeners ───────────────────────────────────────────────────────────
