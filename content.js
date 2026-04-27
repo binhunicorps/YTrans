@@ -16,10 +16,12 @@
   let runVersion    = 0;        // increments to invalidate stale starts
 
   // CC observer
-  let ccObserver  = null;
-  let ccPollTimer = null;
-  let ccDebounce  = null;
-  let lastCCText  = '';
+  let ccObserver    = null;
+  let ccPollTimer   = null;
+  let ccDebounce    = null;
+  let lastCCText    = '';
+  let lastShownAt   = 0;    // timestamp of last showTranslation call
+  let lastShownLen  = 0;    // char length of lastCCText at that moment
 
   // ── Init ──────────────────────────────────────────────────────────────────
   async function init() {
@@ -247,10 +249,13 @@
     const u = new SpeechSynthesisUtterance(text);
     u.lang = bcp47;
 
-    // Pick best matching voice for the target language
-    const exact   = voices.find((v) => v.lang === bcp47);
-    const primary = bcp47.split('-')[0];
-    const matched = exact || voices.find((v) => v.lang.startsWith(primary)) || null;
+    // Pick best voice: prefer Natural/Online/Neural quality tiers first
+    const primary    = bcp47.split('-')[0];
+    const candidates = voices.filter((v) => v.lang === bcp47 || v.lang.startsWith(primary));
+    const matched    = candidates.find((v) => /natural|neural|online/i.test(v.name))
+                    || candidates.find((v) => v.lang === bcp47)
+                    || candidates[0]
+                    || null;
     if (matched) u.voice = matched;
 
     // Match voice speed to current video playback rate
@@ -307,12 +312,16 @@
     overlayEl.textContent = text;
     overlayEl.setAttribute('data-lang', (settings.targetLang || 'vi').toUpperCase());
     overlayEl.classList.add('ytrans-visible');
+    lastShownAt  = Date.now();
+    lastShownLen = lastCCText.length;
     speakTranslation(text);
   }
 
   function hideOverlay() {
     overlayEl?.classList.remove('ytrans-visible');
-    cancelSpeech();
+    // Stop the current utterance but keep video muted (mute persists between subtitle gaps)
+    if (synth) synth.cancel();
+    speakSeq++;
   }
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -341,9 +350,20 @@
   function onCCMutation() {
     if (!settings.enabled) return hideOverlay();
 
-    const text = getCCText();
+    const raw  = Array.from(document.querySelectorAll('.ytp-caption-segment'))
+                      .map((s) => s.textContent).join(' ');
+    const text = raw.replace(/\s+/g, ' ').trim();
+
     if (!text) return hideOverlay();
     if (text === lastCCText) return;
+
+    // Suppress stale partial-cleanup: if within 2 s of last show the new text
+    // is noticeably shorter, it is the old segment rolling off — not a new line.
+    if (lastShownLen > 0 && text.length < lastShownLen * 0.65
+        && (Date.now() - lastShownAt) < 2000) {
+      return;
+    }
+
     lastCCText = text;
 
     const key = `${settings.targetLang}:${text}`;
@@ -355,13 +375,8 @@
 
     abortInflight();
     clearTimeout(ccDebounce);
-    ccDebounce = setTimeout(() => translateAndShow(text), 50);
-  }
-
-  function getCCText() {
-    const segs = document.querySelectorAll('.ytp-caption-segment');
-    if (!segs.length) return '';
-    return Array.from(segs).map((s) => s.textContent).join(' ').trim();
+    // 400 ms debounce — lets YouTube finish its incremental word-by-word updates
+    ccDebounce = setTimeout(() => translateAndShow(text), 400);
   }
 
   // ── Translation (shared by both modes) ───────────────────────────────────
