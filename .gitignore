@@ -1,0 +1,16 @@
+# OS
+Thumbs.db
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# Build / packaging
+*.zip
+*.crx
+*.pem
+
+# Temp
+*.log

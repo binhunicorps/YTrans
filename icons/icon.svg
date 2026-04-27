@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <rect width="128" height="128" rx="22" fill="#1a1a1a"/>
+
+  <rect x="10" y="14" width="108" height="64" rx="14" fill="#FF0000"/>
+  <polygon points="44,26 44,66 92,46" fill="#ffffff"/>
+
+  <rect x="80" y="55" width="30" height="18" rx="4" fill="#000000"/>
+  <text x="95" y="68" font-family="Arial, sans-serif" font-weight="bold" font-size="11" fill="#ffffff" text-anchor="middle">CC</text>
+
+  <rect x="14" y="92"  width="100" height="7" rx="3" fill="#444444"/>
+  <rect x="14" y="106" width="100" height="7" rx="3" fill="#4FC3F7"/>
+  <rect x="14" y="118" width="74"  height="7" rx="3" fill="#4FC3F7"/>
+</svg>

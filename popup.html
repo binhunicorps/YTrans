@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>YTrans</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <div class="popup">
+
+    <!-- Header -->
+    <header>
+      <div class="logo">
+        <svg width="22" height="22" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="48" height="48" rx="10" fill="#1a1a1a"/>
+          <rect x="4" y="10" width="24" height="17" rx="4" fill="#FF0000"/>
+          <polygon points="12,15 12,23 20,19" fill="white"/>
+          <line x1="31" y1="14" x2="44" y2="14" stroke="#4FC3F7" stroke-width="2.5" stroke-linecap="round"/>
+          <line x1="31" y1="20" x2="44" y2="20" stroke="#4FC3F7" stroke-width="2.5" stroke-linecap="round"/>
+          <line x1="31" y1="26" x2="40" y2="26" stroke="#4FC3F7" stroke-width="2.5" stroke-linecap="round"/>
+          <line x1="4"  y1="35" x2="30" y2="35" stroke="#81C995" stroke-width="2.5" stroke-linecap="round"/>
+          <line x1="4"  y1="41" x2="22" y2="41" stroke="#81C995" stroke-width="2.5" stroke-linecap="round"/>
+        </svg>
+        <span>YTrans</span>
+      </div>
+      <label class="toggle" title="Bật / Tắt dịch phụ đề">
+        <input type="checkbox" id="enabledToggle" />
+        <span class="slider"></span>
+      </label>
+    </header>
+
+    <!-- Update banner (hidden by default) -->
+    <a id="updateBanner" class="update-banner hidden" href="#" target="_blank" rel="noopener">
+      <span class="update-icon">🎉</span>
+      <span class="update-text">
+        Có bản mới: <b id="updateVersion">v?</b>
+        <span class="update-hint">Click để cập nhật ↗</span>
+      </span>
+    </a>
+
+    <!-- Status bar -->
+    <div class="status-bar" id="statusBar">
+      <span id="statusText">Đang tải…</span>
+      <span class="version-tag">v<span id="currentVersion">?</span></span>
+    </div>
+
+    <!-- Settings -->
+    <main>
+      <div class="field">
+        <label for="targetLang">Ngôn ngữ đích</label>
+        <div class="select-wrap">
+          <select id="targetLang">
+            <option value="vi">🇻🇳 Tiếng Việt</option>
+            <option value="en">🇺🇸 English</option>
+            <option value="zh-CN">🇨🇳 中文 (Giản thể)</option>
+            <option value="zh-TW">🇹🇼 中文 (Phồn thể)</option>
+            <option value="ja">🇯🇵 日本語</option>
+            <option value="ko">🇰🇷 한국어</option>
+            <option value="fr">🇫🇷 Français</option>
+            <option value="de">🇩🇪 Deutsch</option>
+            <option value="es">🇪🇸 Español</option>
+            <option value="pt">🇧🇷 Português</option>
+            <option value="ru">🇷🇺 Русский</option>
+            <option value="ar">🇸🇦 العربية</option>
+            <option value="th">🇹🇭 ภาษาไทย</option>
+            <option value="id">🇮🇩 Bahasa Indonesia</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="fontSize">
+          Cỡ chữ phụ đề dịch
+          <span class="value-badge" id="fontSizeVal">18px</span>
+        </label>
+        <input type="range" id="fontSize" min="12" max="28" step="1" value="18" />
+        <div class="range-labels"><span>12</span><span>28</span></div>
+      </div>
+
+      <div class="field">
+        <label for="bgOpacity">
+          Độ mờ nền
+          <span class="value-badge" id="bgOpacityVal">80%</span>
+        </label>
+        <input type="range" id="bgOpacity" min="0" max="100" step="5" value="80" />
+        <div class="range-labels"><span>Trong</span><span>Đục</span></div>
+      </div>
+
+      <div class="section-divider">🔊 Đọc thành tiếng (Voice)</div>
+
+      <div class="field field-row">
+        <label for="voiceToggle" class="row-label">Phát âm thanh dịch</label>
+        <label class="toggle small">
+          <input type="checkbox" id="voiceToggle" />
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div class="field" id="voiceRateField">
+        <label for="voiceRate">
+          Tốc độ đọc
+          <span class="value-badge" id="voiceRateVal">1.0×</span>
+        </label>
+        <input type="range" id="voiceRate" min="0.5" max="2" step="0.1" value="1.0" />
+        <div class="range-labels"><span>Chậm</span><span>Nhanh</span></div>
+      </div>
+
+      <div class="field field-row" id="duckAudioField">
+        <label for="duckToggle" class="row-label">Giảm tiếng video khi đọc</label>
+        <label class="toggle small">
+          <input type="checkbox" id="duckToggle" />
+          <span class="slider"></span>
+        </label>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+      <p class="hint">
+        💡 Mở YouTube → nhấn nút <b>🌐 Dịch video</b> trên trình phát để bắt đầu.
+      </p>
+    </footer>
+
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>
